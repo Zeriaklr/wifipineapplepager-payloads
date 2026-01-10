@@ -3,12 +3,13 @@
 # Description: Searches for devices broadcasting probe requests for a specified SSID
 # Acknowledgements: Some parts of this code (SSID Pool) were adapted from Device_Hunter by RocketGod and NotPike Helped (Crew: The Pirates' Plunder). Also, thanks to dark_pyrro.
 # Author: DocVoom
-# Version: 1.0
+# Version: 1.0.1
 
 # Global variables
 SELECTED=0
 TOTAL_SSIDS=0
 SSID_ARRAY=()
+TARGET_SSID=""
 ALERT_TONE="alert.rtttl"
 date=$(date '+%m%d%Y')
 
@@ -53,7 +54,8 @@ select_target() {
                 return 0
                 ;;
             B)
-            	exit 0
+            	SELECTED=""
+                return 0
             	;;
         esac
     done
@@ -61,10 +63,6 @@ select_target() {
 
 recon() {    
     while true; do
-        if $TARGET_SSID==:; then
-            LOG "No target selected"
-            exit 1    
-        fi
         LOG "Starting tcpdump..."
         LOG ""
         tcpdump -i wlan0mon -e -l -s 256  type mgt subtype probe-req 2>/dev/null | while read -r line; do
@@ -87,7 +85,10 @@ recon() {
             A) ;;
             B) 
                 LOG ""
-                line=()
+                line=""
+                break ;;
+            *) 
+                LOG ""
                 break ;;
         esac
     done        
@@ -114,18 +115,25 @@ do
             ;;
         RIGHT)
             LOG "Enter Target"
-            TARGET_SSID=$(TEXT_PICKER "ESSID:" "")
+            TARGET_SSID=$(TEXT_PICKER "SSID:" "")
             LOG "Selected target: $TARGET_SSID"
             LOG ""
             ;;
         A)
-            recon $TARGET_SSID
+            if [[ -z $TARGET_SSID ]]; then
+                LOG "No target selected"
+            else
+                recon $TARGET_SSID
+            fi
             LOG "Scan stopped"
             LOG ""
             ;;
         B)
             LOG "Goodbye"
             exit 0 
+            ;;
+        *)
+            :
             ;;
     esac
 done
